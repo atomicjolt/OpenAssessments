@@ -38,6 +38,10 @@ class Api::AssessmentsController < Api::ApiController
   # => give it the number of random questions from each section you want.
   # confidence_levels
   # => set to true or false to display confidence controls
+  # account_id
+  # The id of the account to attach the assessment to
+  # allowed_attempts
+  # => max number of attempts a single user is allowed to take this summative assessment
   # Example
   # https://assessments.lumenlearning.com/assessments/15?style=lumen_learning&asid=1&per_sec=2&confidence_levels=true&enable_start=true
   # ********************************************************************
@@ -61,6 +65,11 @@ class Api::AssessmentsController < Api::ApiController
       end
     end
     assessment.save!
+
+    if assessment_params[:allowed_attempts]
+      assessment.assessment_settings.create({allowed_attempts: assessment_params[:allowed_attempts].to_i})
+    end
+
     respond_with(:api, assessment)
   end
   private
@@ -68,7 +77,7 @@ class Api::AssessmentsController < Api::ApiController
   def assessment_params
     params.require(:assessment).permit(:title, :description, :xml_file, :license,
                                        :src_url, :recommended_height, :keywords,
-                                       :account_id)
+                                       :account_id, :allowed_attempts)
   end
 
 end
