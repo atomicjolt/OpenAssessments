@@ -105,7 +105,8 @@ export default class Qti{
       return item;
     };
 
-    return this.listFromXml(xml, 'item', fromXml);
+    // Only grab the items at the current level of the tree
+    return this.listFromXml(xml, '> item', fromXml);
   
   }
 

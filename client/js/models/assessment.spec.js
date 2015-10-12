@@ -67,6 +67,7 @@ describe('assessment', () => {
       var item = assessment.sections[0].items[0];
       expect(item.id).toEqual("3567");
     });
+
   });
 
   describe('parseEdX', () => {
@@ -156,6 +157,44 @@ describe('assessment', () => {
 
       expect(AssessmentActions.edXLoadItem).toHaveBeenCalled();
 
+    });
+  });
+
+  describe('GetItems', () => {
+    it('retrieves all items from assessment.xml', () => {
+      var data          = readFixtures("assessment.xml");
+      var xml           = $(data);
+      var assessmentXml = xml.find('assessment').addBack('assessment');
+      var assessment = Assessment.parseQti(1, assessmentXml, xml);
+      var items = Assessment.getItems(assessment.sections, null);
+      expect(items.length).toEqual(10);
+    });
+    
+    it('retrieves 5 items from assessment.xml', () => {
+      var data          = readFixtures("assessment.xml");
+      var xml           = $(data);
+      var assessmentXml = xml.find('assessment').addBack('assessment');
+      var assessment = Assessment.parseQti(1, assessmentXml, xml);
+      var items = Assessment.getItems(assessment.sections, 5);
+      expect(items.length).toEqual(5);
+    });
+
+    it('retrieves all items from dna.xml', () => {
+      var data          = readFixtures("dna.xml");
+      var xml           = $(data);
+      var assessmentXml = xml.find('assessment').addBack('assessment');
+      var assessment = Assessment.parseQti(1, assessmentXml, xml);
+      var items = Assessment.getItems(assessment.sections, null);
+      expect(items.length).toEqual(9);
+    });
+    
+    it('retrieves 2 items from each section dna.xml', () => {
+      var data          = readFixtures("dna.xml");
+      var xml           = $(data);
+      var assessmentXml = xml.find('assessment').addBack('assessment');
+      var assessment = Assessment.parseQti(1, assessmentXml, xml);
+      var items = Assessment.getItems(assessment.sections, 5);
+      expect(items.length).toEqual(4);
     });
   });
 
