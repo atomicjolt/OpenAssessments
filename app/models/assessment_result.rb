@@ -2,6 +2,8 @@ class AssessmentResult < ActiveRecord::Base
   has_one :test_result, dependent: :destroy
   belongs_to :assessment
   belongs_to :user
+  belongs_to :user_assessment
+  belongs_to :lti_launch
   has_many :item_results, dependent: :destroy
 
   acts_as_taggable_on :keywords
@@ -21,10 +23,6 @@ class AssessmentResult < ActiveRecord::Base
 
   STATUS_VALUES = [STATUS_INITIAL, STATUS_PENDING_SUBMISSION, STATUS_PENDING_RESPONSE_PROCESSING, STATUS_FINAL]
 
-  def user_assessment
-    UserAssessment.find_by_assessment_id_and_user_id(self.assessment_id, self.user_id)
-  end
-
   def lti_outcome_params
     {
             'lis_result_sourcedid' => self.lis_result_sourcedid,
@@ -36,6 +34,7 @@ class AssessmentResult < ActiveRecord::Base
   def send_outcome_to_tool_consumer!
     raise "Not enough data to send lti outcome" unless has_necessary_lti_data?
 
+    #todo: update to use the LtiCredential's key/secret
     @tp = IMS::LTI::ToolProvider.new(self.assessment.account.lti_key, self.assessment.account.lti_secret, lti_outcome_params)
 
     if !@tp.outcome_service?
@@ -61,7 +60,11 @@ class AssessmentResult < ActiveRecord::Base
   end
 
   def is_max_result?
-    self.assessment.assessment_results.where(user_id: self.user.id).where('score IS NOT NULL').order('score DESC').select(:id, :score).limit(1).first == self
+    if self.user_assessment
+      self.user_assessment.assessment_results.where('score IS NOT NULL').order('score DESC').select(:id, :score).limit(1).first == self
+    else
+      self.assessment.assessment_results.where(user_id: self.user.id).where('score IS NOT NULL').order('score DESC').select(:id, :score).limit(1).first == self
+    end
   end
 
   def should_send_lti_outcome?

@@ -19,11 +19,14 @@ export default class UniversalInput extends React.Component{
   }
 
   componentDidMount(){
-    //CommunicationHandler.sendSize();
+    CommunicationHandler.sendSize();
+    CommunicationHandler.scrollParentToTop();
+    CommunicationHandler.hideLMSNavigation();
   }
 
   componentDidUpdate(){
-    //CommunicationHandler.sendSize();
+    CommunicationHandler.sendSize();
+    CommunicationHandler.scrollParentToTop();
   }
 
   getStyles(props, theme){
@@ -149,7 +152,7 @@ export default class UniversalInput extends React.Component{
     }
     return (<div className="panel-messages-container panel panel-default" style={styles.panel}>
               <div className="panel-heading text-center" style={styles.panelHeading}>
-                {item.title}
+                {/*{item.title}*/}
                 {messages}
               </div>
               <div className="panel-body" style={styles.panelBody}>

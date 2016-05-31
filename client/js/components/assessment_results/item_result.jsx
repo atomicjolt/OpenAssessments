@@ -11,18 +11,26 @@ export default class ItemResult extends React.Component{
     var color;
     var border;
     var labelColor;
+    var display = "block";
     if(props.isCorrect == "partial"){
       color = theme.partialBackgroundColor;
       border = theme.partialBorder;
       labelColor = theme.partialColor;
     } else if (props.isCorrect == false){
-      border = theme.correctBorder;
+      border = theme.incorrectBorder;
       color = theme.incorrectBackgroundColor;
       labelColor = theme.incorrectColor;
+    } else if(props.isCorrect == "teacher_preview"){
+      labelColor = "transparent";
+      color = theme.correctBackgroundColor;
+      border = theme.correctBorder;
     } else if (props.isCorrect){
       color = theme.correctBackgroundColor;
       border = theme.correctBorder;
       labelColor = theme.correctColor;
+    }
+    if(props.confidence == "teacher_preview"){
+      display = "none";
     }
     return {
       resultContainer: {
@@ -38,6 +46,7 @@ export default class ItemResult extends React.Component{
         padding: theme.confidenceWrapperPadding,
         marginTop: "10px",
         backgroundColor: theme.confidenceWrapperBackgroundColor,
+        display: display
       },
       correctLabel: {
         backgroundColor: labelColor,
@@ -49,6 +58,17 @@ export default class ItemResult extends React.Component{
       }
     };
   }
+
+  confidenceResult(styles) {
+    if (this.props.confidence !== null) {
+      return <div style={styles.confidenceWrapper}>
+        <ResultConfidence level={this.props.confidence}/>
+      </div>
+    } else {
+      return '';
+    }
+  }
+
   render() {
     var styles = this.getStyles(this.props, this.context.theme);
     var correctMessage = "You were incorrect."; 
@@ -56,6 +76,8 @@ export default class ItemResult extends React.Component{
       correctMessage = "You were partially correct."
     } else if(this.props.isCorrect === true){
       correctMessage = "You were correct.";
+    } else if(this.props.isCorrect === "teacher_preview"){
+      correctMessage = ""
     }
     return (
       <div tabIndex="0" aria-label={"Question " + (this.props.index+1)}>
@@ -75,9 +97,7 @@ export default class ItemResult extends React.Component{
             <div>
               <UniversalInput item={this.props.question} isResult={true} chosen={this.props.chosen} correctAnswers={this.props.correctAnswers}/>
             </div>
-            <div style={styles.confidenceWrapper}>
-              <ResultConfidence level={this.props.confidence} />
-            </div>
+            {this.confidenceResult(styles)}
           </div>
           <div className="col-md-3 col-sm-3 col-xs-3">
             <ResultOutcome outcomes={this.props.question.outcomes} correct={this.props.isCorrect} level={this.props.confidence}/>

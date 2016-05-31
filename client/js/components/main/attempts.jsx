@@ -36,10 +36,6 @@ export default class Attempts extends BaseComponent{
     this.context.router.transitionTo("teacher-review", {contextId: this.props.params.externalContextId, assessmentId: this.props.params.assessmentId, attempdId: id});
   }
 
-  previewAttempt(){
-    this.context.router.transitionTo("teacher-preview", {contextId: this.props.params.externalContextId, assessmentId: this.props.params.assessmentId});
-  }
-
   attemptsStuff(ua){
     var that = this;
     return <div>
@@ -86,10 +82,19 @@ export default class Attempts extends BaseComponent{
     return name;
   }
 
+  no_quizzes(){
+    if(this.state.userAssessments.length == 0){
+      return <p>There have not been any attempts for this quiz yet.</p>
+    }
+  }
+
   render(){
     var that = this;
-    return <div>
-      <h2>Attempts for <span onClick={()=>{this.previewAttempt()}}>{this.quiz_name()}</span></h2>
+    return <div style={{marginTop:"50px"}}>
+      <div style={{textAlign:"center"}}>
+        <h2>Attempts for <span>{this.quiz_name()}</span></h2>
+        {this.no_quizzes()}
+      </div>
       <Table
           className="small-12 columns"
           id="attempts_table"

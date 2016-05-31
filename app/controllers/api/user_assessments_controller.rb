@@ -26,7 +26,11 @@ class Api::UserAssessmentsController < Api::ApiController
   def update
     assessment = Assessment.find(params[:assessmentId])
     if assessment != nil
-      @user_assessment = assessment.user_assessments.where(eid: params[:id]).first
+      if params[:lti_context_id].present?
+        @user_assessment = assessment.user_assessments.where(eid: params[:id], lti_context_id: params[:lti_context_id]).first
+      else
+        @user_assessment = assessment.user_assessments.where(eid: params[:id]).first
+      end
       if !@user_assessment.nil? && assessment.kind != 'summative'
         @user_assessment.increment_attempts!
       end
@@ -48,12 +52,11 @@ class Api::UserAssessmentsController < Api::ApiController
     allowed = allowed_attempts(assessment)
     user_assessments = user_assessments.to_a
 
-    results = AssessmentResult.where(assessment_id: params[:assessment_id]).
-                    where(user_id: user_assessments.map(&:user_id)).
-                    select(:id, :created_at, :score, :attempt, :user_id,).to_a.
-                    group_by{|r|r.user_id}
+    results = AssessmentResult.where(user_assessment_id: user_assessments.map(&:id)).
+                    select(:id, :created_at, :score, :attempt, :user_id, :user_assessment_id).to_a.
+                    group_by{|r|r.user_assessment_id}
     user_assessments.map do |ua|
-      ua_json(ua, assessment, allowed, results[ua.user_id] || [])
+      ua_json(ua, assessment, allowed, results[ua.id] || [])
     end
   end
 

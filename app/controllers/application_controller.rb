@@ -1,3 +1,5 @@
+require 'open_assessments'
+
 class ApplicationController < ActionController::Base
 
   # Prevent CSRF attacks by raising an exception.
@@ -51,8 +53,9 @@ class ApplicationController < ActionController::Base
     #
     # Embed related functionality:
     #
-    def embed_url(assessment)
-      api_assessment_url(assessment, format: 'xml')
+    def embed_url(assessment, query_params={})
+      query_params[:format] = 'xml'
+      api_assessment_url(assessment, query_params)
     end
 
     def embed_code(assessment, confidence_levels=true, eid=nil, enable_start=false, offline=false, src_url=nil, style=nil, asid=nil, per_sec=nil, assessment_kind = nil, assessment_title=nil, section_count = nil)
@@ -218,10 +221,21 @@ class ApplicationController < ActionController::Base
     end
 
     def do_lti
+      @lti_launch = LtiLaunch.from_params(params)
 
-      provider = IMS::LTI::ToolProvider.new(current_account.lti_key, current_account.lti_secret, params)
+      if find_lti_credentials
+        provider = @lti_credential.create_tool_provider(params)
+      else
+        #todo next refactor stage: when all credentials are in prod this can be removed
+        # There will be a window where the first branch won't find a cred, this is for backwards compatibility during that window
+        provider = IMS::LTI::ToolProvider.new(current_account.lti_key, current_account.lti_secret, params)
+      end
+
+      @lti_launch.account = current_account
+      @lti_launch.lti_credential = @lti_credential
 
       if provider.valid_request?(request)
+        @lti_launch.was_valid = true
         @isLtiLaunch = true
         @lti_provider = lti_provider
         @identifier = params[:user_id]
@@ -235,6 +249,7 @@ class ApplicationController < ActionController::Base
         if @user
           # If we do LTI and find a different user. Log out the current user and log in the new user.
           # Log the user in
+          @lti_launch.user = @user if @lti_launch
           sign_in(@user, :event => :authentication)
         else
           # Ask them to login or create an account
@@ -267,15 +282,23 @@ class ApplicationController < ActionController::Base
             custom_canvas_user_id: params[:custom_canvas_user_id]
           )
 
+          @lti_launch.user = @user if @lti_launch
           sign_in(@user, :event => :authentication)
         end
       else
+        @lti_launch.launch_error_message = "Invalid LTI request."
         user_not_authorized
       end
 
+    rescue OpenAssessments::LtiError
+      @message = "We don't recognize your account."
+      @lti_launch.launch_error_message = $!.message + @message if @lti_launch
+      user_not_authorized
+    ensure
+      @lti_launch.save if @lti_launch
     end
 
-    def safe_save_email(user)
+  def safe_save_email(user)
       begin
         user.save!
       rescue ActiveRecord::RecordInvalid => ex
@@ -297,6 +320,21 @@ class ApplicationController < ActionController::Base
     def current_account
       @current_account ||= Account.find_by(code: request.subdomains.first) || Account.find_by(domain: request.host) || Account.main
     end
+
+  # Finds the LtiCredential & Account based on the oauth_consumer_key
+  def find_lti_credentials
+    raise OpenAssessments::NoLtiKey unless params["oauth_consumer_key"].present?
+
+    if @lti_credential = LtiCredential.enabled.where(lti_key: params["oauth_consumer_key"]).first
+      @current_account = @lti_credential.account
+
+      @lti_credential
+    else
+      #todo: next refactor stage: can't raise now for backwards-compatibility
+      # raise OpenAssessments::UnknownLtiKey
+      nil
+    end
+  end
 
     def protect_account
       return if ['default', 'sessions', 'devise/passwords', 'devise/confirmations', 'devise/unlocks'].include?(params[:controller])

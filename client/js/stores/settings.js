@@ -59,6 +59,7 @@ function loadSettings(defaultSettings){
     externalUserId     : bestValue('externalUserId', 'external_user_id'),
     externalContextId  : bestValue('externalContextId', 'external_context_id'),
     accountId          : bestValue('accountId', 'account_id'),
+    ltiLaunchId        : defaultSettings.lti_launch_id,
     keywords           : bestValue('keywords', 'keywords'),
     resultsEndPoint    : bestValue('resultsEndPoint', 'results_end_point', 'http  ://localhost  :4200/api'),
     confidenceLevels   : bestValue('confidenceLevels', 'confidence_levels', false),
@@ -76,7 +77,9 @@ function loadSettings(defaultSettings){
     images             : defaultSettings.images,
     ltiRole            : defaultSettings.lti_role,
     assessmentTitle    : defaultSettings.assessmentTitle,
-    sectionCount       : parseInt(defaultSettings.sectionCount)
+    showPostMessageNav : defaultSettings.show_post_message_navigation,
+    sectionCount       : parseInt(defaultSettings.sectionCount),
+    userAssessmentId   : bestValue('user_assessment_id', 'UserAssessmentId')
   };
 
   if(!_settings.srcUrl && !_settings.offline){
